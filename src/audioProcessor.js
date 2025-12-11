@@ -8,7 +8,7 @@ ffmpeg.setFfmpegPath(ffmpegPath);
 
 /**
  * Process audio file to remove speech/vocals
- * Supports both Python-based (Demucs) and fallback methods
+ * Uses Demucs for high-quality vocal separation
  */
 async function processAudio(inputPath, outputPath, progressCallback) {
   const tempDir = path.join(require('os').tmpdir(), 'gettunes_' + Date.now());
@@ -21,23 +21,18 @@ async function processAudio(inputPath, outputPath, progressCallback) {
 
     progressCallback({ percent: 10, message: 'Initialisierung...' });
 
-    // Try Demucs first (works with Python 3.8-3.14)
-    try {
-      progressCallback({ percent: 20, message: 'Trenne Sprache von Musik mit Demucs AI...' });
-      await runDemucs(inputPath, tempDir, progressCallback);
+    // Step 1: Run Demucs separation
+    progressCallback({ percent: 20, message: 'Trenne Sprache von Musik (dies kann einige Minuten dauern)...' });
+    await runDemucs(inputPath, tempDir, progressCallback);
 
-      const instrumentalPath = findInstrumentalFile(tempDir, inputPath);
-      await convertToMp3(instrumentalPath, outputPath);
+    // Step 2: Find the instrumental output from Demucs
+    progressCallback({ percent: 80, message: 'Finalisiere Audio...' });
+    const instrumentalPath = findInstrumentalFile(tempDir, inputPath);
 
-      progressCallback({ percent: 100, message: 'Fertig!' });
-      return;
-    } catch (demucsError) {
-      console.error('Demucs failed, trying fallback method:', demucsError.message);
-      progressCallback({ percent: 30, message: 'Verwende alternative Methode...' });
+    // Step 3: Copy/convert to output path
+    await convertToMp3(instrumentalPath, outputPath);
 
-      // Fallback: Use spectral subtraction method
-      await processWithSpectralMethod(inputPath, outputPath, progressCallback);
-    }
+    progressCallback({ percent: 100, message: 'Fertig!' });
 
   } catch (error) {
     throw new Error(`Verarbeitungsfehler: ${error.message}`);
@@ -50,52 +45,36 @@ async function processAudio(inputPath, outputPath, progressCallback) {
 }
 
 /**
- * Run Demucs vocal separation (supports Python 3.14+)
+ * Run Demucs vocal separation
  */
 function runDemucs(inputPath, outputDir, progressCallback) {
   return new Promise((resolve, reject) => {
-    // Try to find Python
-    const pythonCandidates = ['python', 'python3', 'py'];
-    let pythonCmd = null;
+    // Check if Python is available
+    const pythonCmd = process.platform === 'win32' ? 'python' : 'python3';
 
-    // Test which Python command works
-    for (const cmd of pythonCandidates) {
-      try {
-        const test = require('child_process').spawnSync(cmd, ['--version']);
-        if (test.status === 0) {
-          pythonCmd = cmd;
-          break;
-        }
-      } catch (e) {
-        continue;
-      }
-    }
-
-    if (!pythonCmd) {
-      return reject(new Error('Python nicht gefunden. Bitte installiere Python 3.8+ oder verwende die Fallback-Methode.'));
-    }
-
-    // Use demucs via Python module
+    // Use demucs via Python
+    // Note: Requires Demucs to be installed: pip install demucs
     const demucsArgs = [
       '-m', 'demucs',
-      '--two-stems=vocals',
+      '--two-stems=vocals',  // Only separate vocals vs rest
       '-o', outputDir,
-      '--mp3',
-      '--mp3-bitrate', '320',
+      '--mp3',               // Output as MP3
+      '--mp3-bitrate', '320', // High quality
       inputPath
     ];
 
     const demucsProcess = spawn(pythonCmd, demucsArgs);
+
     let errorOutput = '';
 
     demucsProcess.stderr.on('data', (data) => {
       const output = data.toString();
       errorOutput += output;
 
-      // Parse progress from Demucs output
+      // Try to parse progress from Demucs output
       const progressMatch = output.match(/(\d+)%/);
       if (progressMatch) {
-        const percent = 20 + (parseInt(progressMatch[1]) * 0.6);
+        const percent = 20 + (parseInt(progressMatch[1]) * 0.6); // Scale to 20-80%
         progressCallback({ percent, message: 'Trenne Sprache von Musik...' });
       }
     });
@@ -104,12 +83,16 @@ function runDemucs(inputPath, outputDir, progressCallback) {
       if (code === 0) {
         resolve();
       } else {
-        reject(new Error(`Demucs konnte nicht ausgeführt werden (Code ${code}). Verwende Fallback-Methode.`));
+        reject(new Error(`Demucs Fehler (Code ${code}): ${errorOutput || 'Unbekannter Fehler'}`));
       }
     });
 
     demucsProcess.on('error', (err) => {
-      reject(new Error('Demucs nicht verfügbar. Verwende Fallback-Methode.'));
+      if (err.code === 'ENOENT') {
+        reject(new Error('Python oder Demucs nicht gefunden. Bitte installiere Python 3.8-3.11 und Demucs (pip install demucs).'));
+      } else {
+        reject(err);
+      }
     });
   });
 }
@@ -120,11 +103,11 @@ function runDemucs(inputPath, outputDir, progressCallback) {
 function findInstrumentalFile(tempDir, originalPath) {
   const originalName = path.basename(originalPath, path.extname(originalPath));
 
+  // Demucs output structure: tempDir/htdemucs/originalName/no_vocals.mp3
   const searchDirs = [
     path.join(tempDir, 'htdemucs', originalName),
     path.join(tempDir, 'mdx_extra', originalName),
     path.join(tempDir, 'mdx', originalName),
-    path.join(tempDir, 'htdemucs_ft', originalName),
   ];
 
   for (const dir of searchDirs) {
@@ -136,50 +119,11 @@ function findInstrumentalFile(tempDir, originalPath) {
     }
   }
 
-  throw new Error('Instrumentale Datei nicht gefunden.');
+  throw new Error('Instrumentale Datei nicht gefunden. Demucs-Verarbeitung möglicherweise fehlgeschlagen.');
 }
 
 /**
- * Fallback method: Spectral-based vocal reduction
- * This uses FFmpeg filters to reduce vocals when Demucs is not available
- */
-function processWithSpectralMethod(inputPath, outputPath, progressCallback) {
-  return new Promise((resolve, reject) => {
-    progressCallback({ percent: 40, message: 'Verwende Spektral-Analyse für Vokalentfernung...' });
-
-    // Use FFmpeg's vocal reduction filter (center channel isolation + removal)
-    // This is a simpler method but still effective for many recordings
-    ffmpeg(inputPath)
-      .audioFilters([
-        // Extract side channels (this removes center-panned vocals)
-        'pan=stereo|c0<c0-c1|c1<c1-c0',
-        // Apply high-pass and low-pass filters to isolate music
-        'highpass=f=100',
-        'lowpass=f=16000',
-        // Normalize
-        'loudnorm'
-      ])
-      .audioCodec('libmp3lame')
-      .audioBitrate('320k')
-      .on('progress', (progress) => {
-        if (progress.percent) {
-          const percent = 40 + (progress.percent * 0.5);
-          progressCallback({ percent, message: 'Verarbeite Audio...' });
-        }
-      })
-      .on('end', () => {
-        progressCallback({ percent: 100, message: 'Fertig!' });
-        resolve();
-      })
-      .on('error', (err) => {
-        reject(new Error(`FFmpeg Fehler: ${err.message}`));
-      })
-      .save(outputPath);
-  });
-}
-
-/**
- * Convert audio to MP3
+ * Convert audio to MP3 if needed
  */
 function convertToMp3(inputPath, outputPath) {
   return new Promise((resolve, reject) => {

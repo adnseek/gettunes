@@ -8,7 +8,7 @@
     "build": "electron-builder --win --x64",
     "build:portable": "electron-builder --win portable"
   },
-  "keywords": ["electron", "audio", "vocal-removal", "ai"],
+  "keywords": ["electron", "audio", "vocal-removal", "demucs"],
   "author": "",
   "license": "MIT",
   "devDependencies": {
@@ -18,9 +18,7 @@
   "dependencies": {
     "@ffmpeg-installer/ffmpeg": "^1.1.0",
     "fluent-ffmpeg": "^2.1.2",
-    "python-shell": "^5.0.0",
-    "onnxruntime-node": "^1.17.0",
-    "wav": "^1.0.2"
+    "python-shell": "^5.0.0"
   },
   "build": {
     "appId": "com.gettunes.app",
@@ -45,13 +43,13 @@
     },
     "files": [
       "src/**/*",
-      "models/**/*",
+      "python/**/*",
       "node_modules/**/*"
     ],
     "extraResources": [
       {
-        "from": "models",
-        "to": "models",
+        "from": "python",
+        "to": "python",
         "filter": ["**/*"]
       }
     ]

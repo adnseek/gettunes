@@ -5,34 +5,30 @@ Eine Electron-App für Windows, die Sprache aus MP3-Dateien entfernt und nur die
 ## Features
 
 - 🎵 Hochwertige KI-basierte Sprachentfernung mit Demucs
-- 🔄 Automatische Fallback-Methode wenn Demucs nicht verfügbar ist
 - 🖥️ Läuft ohne Admin-Rechte
 - 🎨 Moderne, benutzerfreundliche Oberfläche
 - 📊 Echtzeit-Fortschrittsanzeige
 - 🎧 Unterstützt MP3, WAV, FLAC, M4A, OGG
-- ✅ Funktioniert mit Python 3.8 bis 3.14+ (oder ganz ohne Python!)
 
 ## Technologie-Stack
 
 - **Electron** - Desktop-Framework
-- **Demucs** (optional) - KI-basierte Vocal Separation (State-of-the-art)
-- **FFmpeg** - Audio-Verarbeitung und Fallback-Methode
+- **Demucs** - KI-basierte Vocal Separation (State-of-the-art)
+- **FFmpeg** - Audio-Verarbeitung
 - **Node.js** - Backend
-- **Python** (optional) - Für beste Qualität mit Demucs
+- **Python 3.8-3.11** - Demucs-Integration
 
 ## Installation
 
 ### Voraussetzungen
 
-**Erforderlich:**
 1. **Node.js** (v18+): https://nodejs.org/
-2. **Git**: https://git-scm.com/
-
-**Optional (für beste Qualität):**
-3. **Python** (v3.8+): https://www.python.org/
-   - ✅ Funktioniert mit Python 3.8 bis 3.14+
-   - 📦 Empfohlen: Python 3.11 oder 3.14
-   - ⚠️ Die App funktioniert auch **ohne Python**, verwendet dann aber die Fallback-Methode
+2. **Python** (v3.8 - v3.11): https://www.python.org/
+   - ⚠️ **WICHTIG**: Nur Python 3.8 bis 3.11 werden unterstützt!
+   - ✅ **Empfohlen: Python 3.11**
+   - 🔗 Download Python 3.11: https://www.python.org/downloads/release/python-31110/
+   - ❌ Python 3.12+ funktioniert NICHT mit Demucs
+3. **Git**: https://git-scm.com/
 
 ### Setup-Schritte
 
@@ -47,17 +43,22 @@ cd gettunes
 npm install
 ```
 
-3. **Optional:** Python-Abhängigkeiten für beste Qualität:
-```bash
-python python/setup.py
-```
+3. Python-Abhängigkeiten installieren:
 
-Oder führe einfach das Setup-Script aus:
+**Einfache Installation (empfohlen):**
 ```bash
 setup-windows.bat
 ```
 
-Die App funktioniert auch ohne Demucs, verwendet dann aber eine Fallback-Methode mit etwas geringerer Qualität.
+**Manuelle Installation:**
+```bash
+python python/setup.py
+```
+
+Oder direkt:
+```bash
+pip install demucs
+```
 
 ## Verwendung
 
@@ -83,28 +84,18 @@ Die fertige App befindet sich im `dist/` Ordner.
 
 ## Wie es funktioniert
 
-GetTunes verwendet **zwei Methoden** für die Sprachentfernung:
-
-### Methode 1: Demucs AI (Beste Qualität)
-Falls Python + Demucs installiert sind:
 1. **Datei hochladen**: Wähle eine MP3-Datei aus
-2. **AI-Verarbeitung**: Demucs trennt Sprache von Musik mittels neuronalen Netzen
+2. **Verarbeitung**: Demucs trennt Sprache von Musik mittels neuronalen Netzen
 3. **Export**: Die bereinigte Datei (nur Musik) wird gespeichert
 
-Das **htdemucs** Modell von Meta/Facebook Research bietet:
+### Demucs-Modell
+
+GetTunes verwendet das **htdemucs** Modell von Meta/Facebook Research:
 - State-of-the-art Vocal Separation
 - Hochwertige Audio-Qualität
 - Basiert auf Hybrid Transformer Demucs Architektur
 
 Beim ersten Start wird das Modell (~2GB) automatisch heruntergeladen.
-
-### Methode 2: Spektral-Analyse (Fallback)
-Falls Demucs nicht verfügbar ist:
-1. Verwendet FFmpeg's Audio-Filter für Vokalentfernung
-2. Entfernt center-panned Vocals durch Kanal-Subtraktion
-3. Schneller, aber etwas geringere Qualität als Demucs
-
-Die App wählt automatisch die beste verfügbare Methode!
 
 ## Hinweise
 
@@ -114,21 +105,21 @@ Die App wählt automatisch die beste verfügbare Methode!
 
 ## Troubleshooting
 
-### ❌ Demucs Installation schlägt fehl (Python 3.14)
+### ❌ Demucs Installation schlägt fehl
 
-**Problem**: `pip install demucs` funktioniert nicht mit Python 3.14
+**Problem**: `pip install demucs` funktioniert nicht
 
-**Lösung**: Installiere die neueste Version direkt von GitHub:
-```bash
-python -m pip install -U git+https://github.com/facebookresearch/demucs#egg=demucs
-```
+**Häufigste Ursache**: Falsche Python-Version!
 
-Oder führe einfach das Setup-Script aus:
-```bash
-setup-windows.bat
-```
+**Lösung**:
+1. Überprüfe deine Python-Version: `python --version`
+2. Wenn du Python 3.12+ hast, **deinstalliere es**
+3. Installiere Python 3.11: https://www.python.org/downloads/release/python-31110/
+4. Stelle sicher, dass "Add Python to PATH" aktiviert ist
+5. Öffne eine **neue** Kommandozeile
+6. Führe setup-windows.bat aus
 
-**Keine Sorge**: Die App funktioniert auch ohne Demucs! Sie verwendet dann automatisch die Fallback-Methode.
+**Wichtig**: Demucs funktioniert nur mit Python 3.8-3.11!
 
 ### ❌ "Python not found" Fehler
 
