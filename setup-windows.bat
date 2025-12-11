@@ -12,23 +12,38 @@ if %errorlevel% neq 0 (
 echo.
 
 echo [2/3] Checking Python installation...
-python --version >nul 2>&1
-if %errorlevel% neq 0 (
-    echo ERROR: Python not found. Please install Python 3.8-3.11 from https://www.python.org/
-    echo.
-    echo IMPORTANT: Python 3.11 is recommended!
-    echo Download: https://www.python.org/downloads/release/python-31110/
-    echo.
-    pause
-    exit /b 1
+
+REM Try py command first (Python Launcher)
+py --version >nul 2>&1
+if %errorlevel% equ 0 (
+    set PYTHON_CMD=py
+    for /f "tokens=2" %%i in ('py --version 2^>^&1') do set PYTHON_VERSION=%%i
+    goto python_found
 )
 
-for /f "tokens=2" %%i in ('python --version 2^>^&1') do set PYTHON_VERSION=%%i
-echo Found Python %PYTHON_VERSION%
+REM Try python command
+python --version >nul 2>&1
+if %errorlevel% equ 0 (
+    set PYTHON_CMD=python
+    for /f "tokens=2" %%i in ('python --version 2^>^&1') do set PYTHON_VERSION=%%i
+    goto python_found
+)
+
+REM Python not found
+echo ERROR: Python not found. Please install Python 3.8-3.11 from https://www.python.org/
+echo.
+echo IMPORTANT: Python 3.11 is recommended!
+echo Download: https://www.python.org/downloads/release/python-31110/
+echo.
+pause
+exit /b 1
+
+:python_found
+echo Found Python %PYTHON_VERSION% (using '%PYTHON_CMD%')
 echo.
 
 echo Checking Python version compatibility...
-python -c "import sys; exit(0 if (3, 8) <= sys.version_info[:2] <= (3, 11) else 1)"
+%PYTHON_CMD% -c "import sys; exit(0 if (3, 8) <= sys.version_info[:2] <= (3, 11) else 1)"
 if %errorlevel% neq 0 (
     echo.
     echo WARNING: Your Python version might not be compatible with Demucs!
@@ -44,7 +59,7 @@ echo ✓ Python version compatible!
 echo.
 
 echo [3/3] Installing Demucs...
-python -m pip install demucs
+%PYTHON_CMD% -m pip install demucs
 if %errorlevel% neq 0 (
     echo.
     echo ERROR: Demucs installation failed.

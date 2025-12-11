@@ -28,6 +28,7 @@ Eine Electron-App für Windows, die Sprache aus MP3-Dateien entfernt und nur die
    - ✅ **Empfohlen: Python 3.11**
    - 🔗 Download Python 3.11: https://www.python.org/downloads/release/python-31110/
    - ❌ Python 3.12+ funktioniert NICHT mit Demucs
+   - 📝 **Hinweis**: Auf Windows heißt der Befehl meist `py` statt `python`
 3. **Git**: https://git-scm.com/
 
 ### Setup-Schritte
@@ -55,9 +56,14 @@ setup-windows.bat
 python python/setup.py
 ```
 
-Oder direkt:
+Oder direkt (Windows):
 ```bash
-pip install demucs
+py -m pip install demucs
+```
+
+Oder (wenn `python` funktioniert):
+```bash
+python -m pip install demucs
 ```
 
 ## Verwendung
@@ -126,7 +132,8 @@ Beim ersten Start wird das Modell (~2GB) automatisch heruntergeladen.
 **Lösung**:
 - Stelle sicher, dass Python zur PATH-Umgebungsvariable hinzugefügt wurde
 - Öffne eine **neue** Kommandozeile nach der Python-Installation
-- Versuche `py --version` statt `python --version`
+- Auf Windows: Die App versucht automatisch `py`, `python` und `python3`
+- Teste welcher funktioniert: `py --version` oder `python --version`
 
 ### ❌ App startet nicht
 

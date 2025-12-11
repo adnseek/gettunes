@@ -49,8 +49,29 @@ async function processAudio(inputPath, outputPath, progressCallback) {
  */
 function runDemucs(inputPath, outputDir, progressCallback) {
   return new Promise((resolve, reject) => {
-    // Check if Python is available
-    const pythonCmd = process.platform === 'win32' ? 'python' : 'python3';
+    // Try to find Python command (py, python, python3)
+    const pythonCandidates = process.platform === 'win32'
+      ? ['py', 'python', 'python3']
+      : ['python3', 'python'];
+
+    let pythonCmd = null;
+
+    // Test which Python command works
+    for (const cmd of pythonCandidates) {
+      try {
+        const test = require('child_process').spawnSync(cmd, ['--version'], { timeout: 2000 });
+        if (test.status === 0) {
+          pythonCmd = cmd;
+          break;
+        }
+      } catch (e) {
+        continue;
+      }
+    }
+
+    if (!pythonCmd) {
+      return reject(new Error('Python nicht gefunden. Bitte installiere Python 3.8-3.11 und stelle sicher, dass es im PATH ist.'));
+    }
 
     // Use demucs via Python
     // Note: Requires Demucs to be installed: pip install demucs
