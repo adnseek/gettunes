@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'">
+  <title>GetTunes - Speech Removal</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>🎵 GetTunes</h1>
+      <p>Entferne Sprache aus deinen MP3-Dateien</p>
+    </header>
+
+    <main>
+      <div class="upload-section">
+        <button id="selectFileBtn" class="btn btn-primary">MP3-Datei auswählen</button>
+        <div id="fileInfo" class="file-info hidden">
+          <span id="fileName"></span>
+          <button id="clearFileBtn" class="btn btn-small">×</button>
+        </div>
+      </div>
+
+      <div id="processingSection" class="processing-section hidden">
+        <button id="processBtn" class="btn btn-success">Sprache entfernen</button>
+
+        <div id="progressContainer" class="progress-container hidden">
+          <div class="progress-bar">
+            <div id="progressFill" class="progress-fill"></div>
+          </div>
+          <p id="progressText" class="progress-text">Verarbeitung läuft...</p>
+        </div>
+
+        <div id="resultSection" class="result-section hidden">
+          <p class="success-message">✓ Erfolgreich verarbeitet!</p>
+          <button id="processAnotherBtn" class="btn btn-primary">Weitere Datei verarbeiten</button>
+        </div>
+
+        <div id="errorSection" class="error-section hidden">
+          <p class="error-message">✗ <span id="errorMessage"></span></p>
+          <button id="retryBtn" class="btn btn-primary">Erneut versuchen</button>
+        </div>
+      </div>
+    </main>
+
+    <footer>
+      <p>Powered by Demucs AI • Hochwertige Sprachentfernung</p>
+    </footer>
+  </div>
+
+  <script src="renderer.js"></script>
+</body>
+</html>
