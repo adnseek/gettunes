@@ -23,14 +23,17 @@ Eine Electron-App für Windows, die Sprache aus MP3-Dateien entfernt und nur die
 ### Voraussetzungen
 
 1. **Node.js** (v18+): https://nodejs.org/
-2. **Python** (v3.8+): https://www.python.org/
+2. **Python** (v3.8 - v3.11): https://www.python.org/
+   - ⚠️ **WICHTIG**: Python 3.12+ wird noch nicht unterstützt!
+   - ✅ Empfohlen: Python 3.11.x
+   - Download: https://www.python.org/downloads/release/python-31110/
 3. **Git**: https://git-scm.com/
 
 ### Setup-Schritte
 
 1. Repository klonen:
 ```bash
-git clone <repository-url>
+git clone -b claude/electron-speech-removal-app-01Lxo8kKNhQszXFkkBYy6FeW https://github.com/adnseek/gettunes.git
 cd gettunes
 ```
 
@@ -91,6 +94,40 @@ Beim ersten Start wird das Modell (~2GB) automatisch heruntergeladen.
 - **Erste Verarbeitung**: Der erste Lauf kann länger dauern (Modell-Download)
 - **Verarbeitungszeit**: Je nach Dateilänge 1-5 Minuten
 - **Qualität**: Beste Ergebnisse mit klarer Musik und Sprache
+
+## Troubleshooting
+
+### ❌ Demucs Installation schlägt fehl
+
+**Problem**: `pip install demucs` funktioniert nicht mit Python 3.12+
+
+**Lösung**:
+1. Installiere Python 3.11: https://www.python.org/downloads/release/python-31110/
+2. Stelle sicher, dass "Add Python to PATH" aktiviert ist
+3. Öffne eine **neue** Kommandozeile
+4. Prüfe Version: `python --version` (sollte 3.11.x zeigen)
+5. Installiere Demucs: `pip install demucs`
+
+**Alternative**: Installiere direkt von GitHub:
+```bash
+pip install -U git+https://github.com/facebookresearch/demucs#egg=demucs
+```
+
+### ❌ "Python not found" Fehler
+
+**Lösung**:
+- Stelle sicher, dass Python zur PATH-Umgebungsvariable hinzugefügt wurde
+- Öffne eine **neue** Kommandozeile nach der Python-Installation
+- Versuche `py --version` statt `python --version`
+
+### ❌ App startet nicht
+
+**Lösung**:
+```bash
+# Node.js Dependencies neu installieren
+rm -rf node_modules
+npm install
+```
 
 ## Lizenz
 
